@@ -17,6 +17,10 @@ Date: November 2025
 from firedrake import *
 import matplotlib.pyplot as plt
 from firedrake.pyplot import tricontour
+import os
+output_dir = "poisson_output"
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
 
 # Define constant parameters
 omega = 16 * pi # Frequency for the manufactured solution
@@ -87,7 +91,7 @@ u_coarse_to_fine.interpolate(u_solution_coarse)
 
 # Compute the error between the numerical and analytical solutions
 error_L2 = errornorm(u_analytical, u_solution, norm_type='L2')
-print(f"L2 Error: {error_L2}")
+print(f"Refined L2 Error: {error_L2}")
 
 # Plot the numerical solution, the analytical solution, and the point-wise absolute error in one figure
 fig, axes = plt.subplots(2, 2, figsize=(11, 8))
@@ -106,4 +110,4 @@ contours4 = tricontourf(error_function, axes=axes[1][1], levels=100, cmap="virid
 axes[1][1].set_title("Point-wise Absolute Error")
 fig.colorbar(contours3, ax=axes[1][1])
 plt.tight_layout()
-plt.savefig("poisson_solutions_comparison.png")
+plt.savefig(f"{output_dir}/poisson_solutions_comparison.png")

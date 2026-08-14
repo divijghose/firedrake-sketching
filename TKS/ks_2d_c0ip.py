@@ -1,3 +1,4 @@
+
 from firedrake import *
 from math import pi
 import numpy as np
@@ -10,9 +11,9 @@ if not os.path.exists(output_dir):
 
 
 
-ncells = 1000
-L = 32*pi
-mesh = PeriodicIntervalMesh(ncells, L)
+N = 64
+L = 32.0*pi
+mesh = PeriodicSquareMesh(N, N, L)
 
 V = FunctionSpace(mesh, "CG", 2)
 Vdg = FunctionSpace(mesh, "DG", 1)
@@ -62,16 +63,19 @@ KSSolver = NonlinearVariationalSolver(KSProb,
 
 #initial condition
 
-x, = SpatialCoordinate(mesh)
+x, y = SpatialCoordinate(mesh)
 # un.project(exp(sin(pi*2*x) + 0.2*cos(pi*x)))
-un.project(cos(x / 16.0) * (1.0 + sin(x / 16.0)))
+# un.project(cos(x / 16.0) * (1.0 + sin(x / 16.0)))
+# Start with a Gaussian centered at (L/2, L/2)
+un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 16.0))
+
 
 t = 0.
-tmax = 50
+tmax = 50.0
 tdump = 0.1
 dumpt = 0.
 
-file0 = VTKFile(f"{output_dir}/tks.pvd")
+file0 = VTKFile(f"{output_dir}/tks_2d.pvd")
 uout = Function(Vdg)
 uout.interpolate(un)
 file0.write(uout)
@@ -104,26 +108,26 @@ while t < tmax - dt/2:
 
 
 
-try:
-    plt.rcParams["text.usetex"] = True
-    plt.rcParams["font.family"] = "serif"
-    plt.rcParams["font.serif"] = ["Computer Modern Roman"]
-    SIZE = 12
-    plt.rcParams.update({'font.size': SIZE,
-                         'axes.labelsize': SIZE,
-                         'axes.titlesize': SIZE,
-                         'xtick.labelsize': SIZE,
-                         'ytick.labelsize': SIZE,
-                         'legend.fontsize': SIZE,
-                         'figure.titlesize': SIZE})
-except:
-    print("LaTeX not found. Using default matplotlib text rendering.")
+# try:
+#     plt.rcParams["text.usetex"] = True
+#     plt.rcParams["font.family"] = "serif"
+#     plt.rcParams["font.serif"] = ["Computer Modern Roman"]
+#     SIZE = 12
+#     plt.rcParams.update({'font.size': SIZE,
+#                          'axes.labelsize': SIZE,
+#                          'axes.titlesize': SIZE,
+#                          'xtick.labelsize': SIZE,
+#                          'ytick.labelsize': SIZE,
+#                          'legend.fontsize': SIZE,
+#                          'figure.titlesize': SIZE})
+# except:
+#     print("LaTeX not found. Using default matplotlib text rendering.")
 
 
-fig, ax = plt.subplots()
-X, Tt = np.meshgrid(np.linspace(0, L, ncells), t_data)
-ax.contourf(X, Tt, u_data)
-plt.xlabel("x")
-plt.ylabel("t")
-plt.title("1D Kuramoto-Sivashinsky")
-plt.savefig(f"{output_dir}/tks_1d.png", dpi=300, bbox_inches='tight')
+# fig, ax = plt.subplots()
+# X, Tt = np.meshgrid(np.linspace(0, L, ncells), t_data)
+# ax.contourf(X, Tt, u_data)
+# plt.xlabel("x")
+# plt.ylabel("t")
+# plt.title("1D Kuramoto-Sivashinsky")
+# plt.savefig(f"{output_dir}/tks_1d.png", dpi=300, bbox_inches='tight')

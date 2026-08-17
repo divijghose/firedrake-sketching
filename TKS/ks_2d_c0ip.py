@@ -12,24 +12,35 @@ if not os.path.exists(output_dir):
 
 
 N = 128
-L = 2.0*pi
-mesh = PeriodicSquareMesh(N, N, L)
+v1 = 0.035
+v2 = 0.035
+Lx = np.sqrt(np.pi**2/v1)
+Ly = np.sqrt(np.pi**2/v2)
+mesh = PeriodicRectangleMesh(nx=N, ny=N, Lx=Lx, Ly=Ly)
+dt = 1e-1
+T = 100*dt
+alpha = Constant(1.0) # viscosity
+beta = Constant(1.0) # hyperviscosity
+gamma= Constant(1.0) # advection
+theta = 0.5
 
 V = FunctionSpace(mesh, "CG", 2)
 Vdg = FunctionSpace(mesh, "DG", 1)
-un = Function(V)
+
 unp1 = Function(V)
-
-uh = (un + unp1)/2
-
+un = Function(V)
 v = TestFunction(V)
 
-dt = 0.05
-dT = Constant(dt)
+uh = (1 - theta) * un + theta * unp1
+uh_mean = assemble(uh*uh*dx)/(4*Lx*Ly)
 
-alpha = Constant(1.0) # viscosity
-beta = Constant(0.020) # hyperviscosity
-gamma = Constant(1.) # advection
+x, y = SpatialCoordinate(mesh)
+init_expr = sin(6*pi*x/Lx)*sin(6*pi*y/Ly)
+
+u_init = Function(V)
+u_init.interpolate(init_expr)
+unp1.assign(u_init)
+
 
 eta = Constant(5.)
 
@@ -41,11 +52,11 @@ def a(u, v):
     eqn += eta/h*jump(v.dx(0))*jump(u.dx(0))*dS
     return eqn
 
-eqn = (
+F = (
     v*(unp1 - un)*dx
-    - dT*alpha*v.dx(0)*uh.dx(0)*dx
-    + a(dT*beta*uh, v)
-    - dT*gamma*0.5*v.dx(0)*uh*uh*dx
+    - dt*alpha*v.dx(0)*uh.dx(0)*dx
+    + a(dt*beta*uh, v)
+    - dt*gamma*0.5*v.dx(0)*(uh*uh - uh_mean)*dx
     )
 
 params = {
@@ -61,7 +72,7 @@ params = {
 }
 
 #make the solver
-KSProb = NonlinearVariationalProblem(eqn, unp1)
+KSProb = NonlinearVariationalProblem(F, unp1)
 KSSolver = NonlinearVariationalSolver(KSProb,
                                       solver_parameters=params)
 
@@ -73,38 +84,27 @@ x, y = SpatialCoordinate(mesh)
 # Start with a Gaussian centered at (L/2, L/2)
 #un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 8.0))
 
-un.project(sin(8*pi*x/L)*sin(8*pi*y/L))
-t = 0.
-tmax = 50.0
-tdump = 0.1
+un.assign(unp1)
+tdump = 5e-4
 dumpt = 0.
 
-file0 = VTKFile(f"{output_dir}/1_tks_2d.pvd")
+file = VTKFile(f"{output_dir}/1_tks_2d.pvd")
 uout = Function(Vdg)
-uout.interpolate(un)
-file0.write(uout)
+uout.interpolate(unp1)
+file.write(uout)
 
-Vplot = FunctionSpace(mesh, "CG", 1)
-uplot = Function(Vplot)
-uplot.interpolate(un)
 
-u_data = []
-t_data = []
-u_data.append(uplot.dat.global_data[:])
-t_data.append(0.0)
-while t < tmax - dt/2:
+
+t = 0
+while t < T:
     t += dt
-
+    print(f"t = {t}")
     KSSolver.solve()
-    print(norm(unp1))
     un.assign(unp1)
 
-    uplot.interpolate(un)
-    u_data.append(uplot.dat.global_data[:])
-    t_data.append(t)
     if dumpt > tdump - dt/2:
-        uout.interpolate(un)
-        file0.write(uout)
+        uout.interpolate(unp1)
+        file.write(uout)
         
         dumpt -= tdump
     dumpt += dt

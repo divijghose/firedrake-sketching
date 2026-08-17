@@ -49,11 +49,15 @@ eqn = (
     )
 
 params = {
-    "snes_atol": 1.0e-50,
-    "snes_rtol": 1.0e-6,
-    "snes_stol": 1.0e-50,
-    "ksp_type":"preonly",
-    "pc_type":"lu"
+    "snes_type": "newtonls",
+    "snes_rtol": 1e-50,
+    "snes_atol": 1e-50,
+    "snes_stol": np.sqrt(np.finfo(np.float64).eps) * 1e-2,
+    "ksp_type": "preonly",
+    "snes_linesearch_type": "none",
+    "pc_type": "lu",
+    "pc_factor_mat_solver_type": "mumps",
+    "snes_monitor": None,
 }
 
 #make the solver
@@ -105,29 +109,3 @@ while t < tmax - dt/2:
         dumpt -= tdump
     dumpt += dt
 
-
-
-
-# try:
-#     plt.rcParams["text.usetex"] = True
-#     plt.rcParams["font.family"] = "serif"
-#     plt.rcParams["font.serif"] = ["Computer Modern Roman"]
-#     SIZE = 12
-#     plt.rcParams.update({'font.size': SIZE,
-#                          'axes.labelsize': SIZE,
-#                          'axes.titlesize': SIZE,
-#                          'xtick.labelsize': SIZE,
-#                          'ytick.labelsize': SIZE,
-#                          'legend.fontsize': SIZE,
-#                          'figure.titlesize': SIZE})
-# except:
-#     print("LaTeX not found. Using default matplotlib text rendering.")
-
-
-# fig, ax = plt.subplots()
-# X, Tt = np.meshgrid(np.linspace(0, L, ncells), t_data)
-# ax.contourf(X, Tt, u_data)
-# plt.xlabel("x")
-# plt.ylabel("t")
-# plt.title("1D Kuramoto-Sivashinsky")
-# plt.savefig(f"{output_dir}/tks_1d.png", dpi=300, bbox_inches='tight')

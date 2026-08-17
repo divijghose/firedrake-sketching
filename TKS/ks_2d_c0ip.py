@@ -11,8 +11,8 @@ if not os.path.exists(output_dir):
 
 
 
-N = 64
-L = 32.0*pi
+N = 128
+L = 2.0*pi
 mesh = PeriodicSquareMesh(N, N, L)
 
 V = FunctionSpace(mesh, "CG", 2)
@@ -24,11 +24,11 @@ uh = (un + unp1)/2
 
 v = TestFunction(V)
 
-dt = 0.01
+dt = 0.05
 dT = Constant(dt)
 
 alpha = Constant(1.0) # viscosity
-beta = Constant(0.02923) # hyperviscosity
+beta = Constant(0.020) # hyperviscosity
 gamma = Constant(1.) # advection
 
 eta = Constant(5.)
@@ -67,15 +67,15 @@ x, y = SpatialCoordinate(mesh)
 # un.project(exp(sin(pi*2*x) + 0.2*cos(pi*x)))
 # un.project(cos(x / 16.0) * (1.0 + sin(x / 16.0)))
 # Start with a Gaussian centered at (L/2, L/2)
-un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 16.0))
+#un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 8.0))
 
-
+un.project(sin(8*pi*x/L)*sin(8*pi*y/L))
 t = 0.
 tmax = 50.0
 tdump = 0.1
 dumpt = 0.
 
-file0 = VTKFile(f"{output_dir}/tks_2d.pvd")
+file0 = VTKFile(f"{output_dir}/1_tks_2d.pvd")
 uout = Function(Vdg)
 uout.interpolate(un)
 file0.write(uout)

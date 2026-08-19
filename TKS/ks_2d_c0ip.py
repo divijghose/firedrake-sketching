@@ -17,8 +17,8 @@ v2 = 0.035
 Lx = np.sqrt(np.pi**2/v1)
 Ly = np.sqrt(np.pi**2/v2)
 mesh = PeriodicRectangleMesh(nx=N, ny=N, Lx=Lx, Ly=Ly)
-dt = 1e-2
-T = 100
+dt = 1e-1
+T = 500
 alpha = Constant(1.0) # viscosity
 beta = Constant(1.0) # hyperviscosity
 gamma= Constant(1.0) # advection
@@ -63,7 +63,7 @@ F = (
     v*(unp1 - un)*dx
     - dt*alpha*v.dx(0)*uh.dx(0)*dx
     + a2d(dt*beta*uh, v)
-    - dt*gamma*0.5*v.dx(0)*(uh*uh - uh_mean)*dx
+    - dt*gamma*0.5*v.dx(0)*(uh*uh)*dx
     )
 
 params = {

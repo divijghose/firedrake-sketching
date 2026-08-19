@@ -17,8 +17,8 @@ v2 = 0.035
 Lx = np.sqrt(np.pi**2/v1)
 Ly = np.sqrt(np.pi**2/v2)
 mesh = PeriodicRectangleMesh(nx=N, ny=N, Lx=Lx, Ly=Ly)
-dt = 1e-1
-T = 100*dt
+dt = 1e-2
+T = 100
 alpha = Constant(1.0) # viscosity
 beta = Constant(1.0) # hyperviscosity
 gamma= Constant(1.0) # advection
@@ -51,11 +51,18 @@ def a(u, v):
     eqn += avg(v.dx(0).dx(0))*jump(u.dx(0))*dS
     eqn += eta/h*jump(v.dx(0))*jump(u.dx(0))*dS
     return eqn
-
+def a2d(u, v):
+    n = FacetNormal(mesh)
+    h = avg(CellVolume(mesh))/FacetArea(mesh)
+    eqn = div(grad(u)) * div(grad(v)) * dx
+    eqn += avg(div(grad(u))) * jump(grad(v),n) * dS
+    eqn += avg(div(grad(v))) * jump(grad(u),n) * dS
+    eqn += eta/h * jump(grad(v),n) * jump(grad(u),n) * dS
+    return eqn
 F = (
     v*(unp1 - un)*dx
     - dt*alpha*v.dx(0)*uh.dx(0)*dx
-    + a(dt*beta*uh, v)
+    + a2d(dt*beta*uh, v)
     - dt*gamma*0.5*v.dx(0)*(uh*uh - uh_mean)*dx
     )
 
@@ -85,7 +92,7 @@ x, y = SpatialCoordinate(mesh)
 #un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 8.0))
 
 un.assign(unp1)
-tdump = 5e-4
+tdump = 1
 dumpt = 0.
 
 file = VTKFile(f"{output_dir}/1_tks_2d.pvd")
@@ -98,7 +105,6 @@ file.write(uout)
 t = 0
 while t < T:
     t += dt
-    print(f"t = {t}")
     KSSolver.solve()
     un.assign(unp1)
 

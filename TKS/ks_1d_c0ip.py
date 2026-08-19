@@ -71,10 +71,10 @@ tmax = 50
 tdump = 0.1
 dumpt = 0.
 
-file0 = VTKFile(f"{output_dir}/tks.pvd")
+file = VTKFile(f"{output_dir}/tks.pvd")
 uout = Function(Vdg)
 uout.interpolate(un)
-file0.write(uout)
+file.write(uout)
 
 Vplot = FunctionSpace(mesh, "CG", 1)
 uplot = Function(Vplot)
@@ -96,7 +96,7 @@ while t < tmax - dt/2:
     t_data.append(t)
     if dumpt > tdump - dt/2:
         uout.interpolate(un)
-        file0.write(uout)
+        file.write(uout)
         
         dumpt -= tdump
     dumpt += dt

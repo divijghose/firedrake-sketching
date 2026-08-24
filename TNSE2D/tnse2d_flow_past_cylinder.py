@@ -10,8 +10,8 @@ output_dir = "tnse2d_output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
-dt = 1e-3
-T = 5e0
+dt = 5e-3
+T = 10.0
 t = 0.0
 c = Constant(t)
 
@@ -76,17 +76,25 @@ solver_parameters = {
 problem = NonlinearVariationalProblem(F, up, bcs=bcs)
 solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters)
 
+tdump = 0.1
+dumpt = 0.
 outfile = VTKFile(f"{output_dir}/flow_past_cylinder.pvd")
 while t < T:
+    t += dt
+    c.assign(t)
     PETSc.Sys.Print(f"t = {t}")
     up.assign(up_n)
     solver.solve()
 
     up_n.assign(up)
-    t += dt
-    c.assign(t)
-    u, p = up.subfunctions
-    u.rename("velocity")
-    p.rename("pressure")
-    outfile.write(u, p, time=t)
+
+    if dumpt > tdump - dt/2:
+        u, p = up.subfunctions
+        u.rename("velocity")
+        p.rename("pressure")
+        outfile.write(u, p, time=t)
+        
+        dumpt -= tdump
+    dumpt += dt
+    
 

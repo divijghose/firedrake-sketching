@@ -2,16 +2,13 @@ from firedrake import *
 from firedrake.petsc import PETSc
 import os
 
-
-N = 64
-
 mesh = Mesh("assets/meshes/flow_past_cylinder.msh")
 output_dir = "tnse2d_output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
-dt = 5e-3
-T = 10.0
+dt = 1e-3
+T = 20.0
 t = 0.0
 c = Constant(t)
 

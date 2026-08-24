@@ -2,6 +2,7 @@ from firedrake import *
 from firedrake.petsc import PETSc
 import os
 
+
 N = 64
 
 mesh = Mesh("assets/meshes/flow_past_cylinder.msh")
@@ -10,7 +11,7 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
 dt = 1e-3
-T = 5e-1
+T = 5e0
 t = 0.0
 c = Constant(t)
 
@@ -77,7 +78,7 @@ solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters
 
 outfile = VTKFile(f"{output_dir}/flow_past_cylinder.pvd")
 while t < T:
-    print(f"t = {t}")
+    PETSc.Sys.Print(f"t = {t}")
     up.assign(up_n)
     solver.solve()
 

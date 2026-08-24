@@ -16,17 +16,16 @@ v1 = 0.035
 v2 = 0.035
 Lx = np.sqrt(np.pi**2/v1)
 Ly = np.sqrt(np.pi**2/v2)
-mesh = PeriodicRectangleMesh(nx=N, ny=N, Lx=Lx, Ly=Ly)
+mesh = PeriodicRectangleMesh(nx=N, ny=N, Lx=2*Lx, Ly=2*Ly)
 dt = 1e-1
-T = 500
+T = 100
 alpha = Constant(1.0) # viscosity
 beta = Constant(1.0) # hyperviscosity
 gamma= Constant(1.0) # advection
 theta = 0.5
 
 V = FunctionSpace(mesh, "CG", 2)
-Vdg = FunctionSpace(mesh, "DG", 1)
-
+Vdg = FunctionSpace(mesh, "CG", 1)
 unp1 = Function(V)
 un = Function(V)
 v = TestFunction(V)
@@ -35,7 +34,8 @@ uh = (1 - theta) * un + theta * unp1
 uh_mean = assemble(uh*uh*dx)/(4*Lx*Ly)
 
 x, y = SpatialCoordinate(mesh)
-init_expr = sin(6*pi*x/Lx)*sin(6*pi*y/Ly)
+# init_expr = cos(12*pi*x/Lx)*cos(12*pi*y/Ly)
+init_expr = sin((2*pi*x/Lx) + (2*pi*y/Ly)) + sin(2*pi*x/Lx) + sin(2*pi*y/Ly)
 
 u_init = Function(V)
 u_init.interpolate(init_expr)
@@ -61,9 +61,9 @@ def a2d(u, v):
     return eqn
 F = (
     v*(unp1 - un)*dx
-    - dt*alpha*v.dx(0)*uh.dx(0)*dx
+    - dt*alpha*inner(grad(uh),grad(v))*dx
     + a2d(dt*beta*uh, v)
-    - dt*gamma*0.5*v.dx(0)*(uh*uh)*dx
+    - dt*gamma*0.5*(dot(grad(uh), grad(uh))- uh_mean)*v*dx
     )
 
 params = {
@@ -83,16 +83,10 @@ KSProb = NonlinearVariationalProblem(F, unp1)
 KSSolver = NonlinearVariationalSolver(KSProb,
                                       solver_parameters=params)
 
-#initial condition
 
-x, y = SpatialCoordinate(mesh)
-# un.project(exp(sin(pi*2*x) + 0.2*cos(pi*x)))
-# un.project(cos(x / 16.0) * (1.0 + sin(x / 16.0)))
-# Start with a Gaussian centered at (L/2, L/2)
-#un.project(exp(-((x - L/2)**2 + (y - L/2)**2) / 8.0))
 
 un.assign(unp1)
-tdump = 1
+tdump = 1e-2
 dumpt = 0.
 
 file = VTKFile(f"{output_dir}/1_tks_2d.pvd")

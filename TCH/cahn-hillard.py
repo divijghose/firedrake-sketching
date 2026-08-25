@@ -18,11 +18,10 @@ if len(sys.argv) > 1 and sys.argv[1].endswith(".yaml"):
 else:
     raise ValueError("Please provide a YAML configuration file as a command-line argument.")
 
-
-output_dir = config.get("output_dir", "ch_output")
 os.makedirs("results", exist_ok=True)
+output_dir = config.get("output_dir", "ch_output")
+output_dir = f"results/{output_dir}"
 if not os.path.exists(output_dir):
-    output_dir = f"results/{output_dir}"
     os.makedirs(output_dir, exist_ok=True)
 outfile = VTKFile(f"{output_dir}/tch.pvd")
 

@@ -16,7 +16,7 @@ def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
 def inlet_velocity(y, t):
-    U = 1.5*sin(pi*t/8)
+    U = 1.5#*sin(pi*t/8)
     inlet_profile = 4*U*y*(0.41-y)/0.41**2
     return inlet_profile
 

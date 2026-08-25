@@ -1,16 +1,36 @@
 from firedrake import *
 from firedrake.petsc import PETSc
 import os
+import sys
 
 mesh = Mesh("assets/meshes/flow_past_cylinder.msh")
-output_dir = "tnse2d_output"
+# Read configuration from YAML file
+if len(sys.argv) > 1 and sys.argv[1].endswith(".yaml"):
+    PETSc.Sys.Print(f"Reading configuration from YAML file: {sys.argv[1]}")
+    yaml_file_path = sys.argv[1]
+    try:
+        import yaml
+    except ImportError:
+        raise ImportError("PyYAML is required to read YAML files.")
+    with open(yaml_file_path, "r") as file:
+        config = yaml.safe_load(file)
+else:
+    raise ValueError("Please provide a YAML configuration file as a command-line argument.")
+
+os.makedirs("results", exist_ok=True)
+output_dir = config.get("output_dir", "tnse2d_output")
+output_dir = f"results/{output_dir}"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
+outfile = VTKFile(f"{output_dir}/tnse2d_fpc.pvd")
 
-dt = 1e-3
-T = 20.0
+
+dt = float(config.get("dt", 1e-3))
+T = float(config.get("tmax", 20.0))
 t = 0.0
 c = Constant(t)
+tdump = config.get("output_frequency", 100) * float(dt)
+dumpt = 0.
 
 def du_dt(u, u_n, dt):
     return (u - u_n) / dt
@@ -25,7 +45,6 @@ x, y = SpatialCoordinate(mesh)
 
 V = VectorFunctionSpace(mesh, "CG", 2)
 W = FunctionSpace(mesh, "CG", 1)
-
 Z = V * W
 
 up = Function(Z)
@@ -48,7 +67,8 @@ bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], bound
 bcs.append(DirichletBC(Z.sub(0),(inlet_velocity(y, c),0.0), (boundary_markers["Inlet"],)))
 bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 
-Re = Constant(100.0)
+Re = Constant(float(config.get("reynolds_number", 100.0)))
+
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
     + 1/Re*inner(grad(u), grad(v))*dx
@@ -59,7 +79,6 @@ F = (
 
 solver_parameters = {
     "snes_type": "newtonls",
-    "snes_monitor": None,
     "snes_rtol": 1e-6,
     "ksp_type": "gmres",
     "pc_type": "fieldsplit",
@@ -70,16 +89,19 @@ solver_parameters = {
     "fieldsplit_1_ksp_type": "preonly",
     "fieldsplit_1_pc_type": "hypre"
 }
+if config.get("verbose", False):
+    solver_parameters["snes_monitor"] = None
+
 problem = NonlinearVariationalProblem(F, up, bcs=bcs)
 solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters)
 
-tdump = 0.1
-dumpt = 0.
-outfile = VTKFile(f"{output_dir}/flow_past_cylinder.pvd")
+
+
 while t < T:
     t += dt
     c.assign(t)
-    PETSc.Sys.Print(f"t = {t}")
+    if config.get("verbose", False):
+        PETSc.Sys.Print(f"t = {t}")
     up.assign(up_n)
     solver.solve()
 

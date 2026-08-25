@@ -1,0 +1,13 @@
+num_elems: 128
+vx: 0.035
+vy: 0.035
+dt: 0.1
+tmax: 100
+viscosity: 1.0
+hyperviscosity: 1.0
+advection: 1.0
+theta: 0.5 # 0.5 for Crank-Nicolson, 1.0 for backward Euler
+c0ip_penalty: 5.0
+output_dir: "ks_2d_c0ip"
+output_freq: 10
+verbose: true

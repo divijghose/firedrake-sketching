@@ -71,10 +71,7 @@ F1 = (
     - lmbda * inner(grad(c), grad(v)) * dx
 )
 F = F0 + F1
-
-
-problem = NonlinearVariationalProblem(F, u)
-solver = NonlinearVariationalSolver(problem, solver_parameters={
+solver_parameters = {
     "snes_type": "newtonls",
     "snes_rtol": 1e-50,
     "snes_atol": 1e-50,
@@ -83,8 +80,12 @@ solver = NonlinearVariationalSolver(problem, solver_parameters={
     "snes_linesearch_type": "none",
     "pc_type": "lu",
     "pc_factor_mat_solver_type": "mumps",
-    "snes_monitor": None,
-})
+}
+if config.get("verbose", False):
+    solver_parameters["snes_monitor"] = None
+
+problem = NonlinearVariationalProblem(F, u)
+solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters)
 
 
 c_plot, mu_plot = u.subfunctions

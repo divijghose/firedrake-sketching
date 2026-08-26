@@ -60,7 +60,7 @@ bcs = [DirichletBC(V, Constant(0.0), (1, 2, 3, 4))]
 
 # Solve the variational problem
 u_solution = Function(V)
-solve(a == L, u_solution, bcs=bcs, solver_parameters={'ksp_type': 'pre_only', 'pc_type': 'lu', 'pc_factor_mat_solver_type': 'mumps'})
+solve(a == L, u_solution, bcs=bcs, solver_parameters={'ksp_type': 'preonly', 'pc_type': 'lu', 'pc_factor_mat_solver_type': 'mumps'})
 
 # Compute the error between the numerical and analytical solutions
 error_L2 = errornorm(u_analytical, u_solution, norm_type='L2')

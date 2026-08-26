@@ -32,7 +32,7 @@ lmbda = float(config.get("lambda", 1e-2))
 dt = float(config.get("dt", 5e-6))
 theta = float(config.get("theta", 0.5))
 t = 0.0
-T = 50*dt
+T = 200*dt
 tdump = config.get("output_frequency", 10) * dt
 dumpt = 0.
 

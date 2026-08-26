@@ -1,7 +1,7 @@
-num_elems : 100
+num_elems : 128
 lambda: 1e-2
 dt: 5e-6
 theta: 0.5 # Crank-Nicholson
 output_dir: "ch_output" # Output sub directory inside results/
-output_frequency: 10
+output_frequency: 1
 verbose: False

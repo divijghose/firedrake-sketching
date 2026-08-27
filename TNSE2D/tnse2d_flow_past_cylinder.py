@@ -66,13 +66,13 @@ no_slip_bc = Constant((0.0, 0.0))
 bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"]))]
 
 bcs.append(DirichletBC(Z.sub(0),(inlet_velocity(y, c),0.0), (boundary_markers["Inlet"],)))
-bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
+# bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 
 Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + 1/Re*inner(grad(u), grad(v))*dx
+    + (1.5*0.2)/Re*inner(grad(u), grad(v))*dx
     + inner(dot(grad(u), u), v)*dx 
     - p * div(v)*dx +
     div(u)*phi*dx

@@ -36,8 +36,8 @@ def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
 def inlet_velocity(y, t):
-    U = 2.5#*sin(pi*t/8)
-    inlet_profile = 4*U*y*(1-y)/1**2
+    U = 1.0#*sin(pi*t/8)
+    inlet_profile = 4*U*y*(0.8-y)/0.8**2
    # inlet_profile = U
     return inlet_profile
 
@@ -72,7 +72,7 @@ Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + (1.5*0.2)/Re*inner(grad(u), grad(v))*dx
+    + (1.0*0.2)/Re*inner(grad(u), grad(v))*dx
     + inner(dot(grad(u), u), v)*dx 
     - p * div(v)*dx +
     div(u)*phi*dx

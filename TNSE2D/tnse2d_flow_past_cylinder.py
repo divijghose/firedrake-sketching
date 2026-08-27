@@ -95,6 +95,7 @@ if config.get("verbose", False):
 problem = NonlinearVariationalProblem(F, up, bcs=bcs)
 solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters)
 
+up_n.assign(up)
 
 
 while t < T:
@@ -102,7 +103,6 @@ while t < T:
     c.assign(t)
     if config.get("verbose", False):
         PETSc.Sys.Print(f"t = {t}")
-    up.assign(up_n)
     solver.solve()
 
     up_n.assign(up)

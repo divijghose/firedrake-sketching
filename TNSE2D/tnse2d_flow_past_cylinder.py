@@ -37,7 +37,7 @@ def du_dt(u, u_n, dt):
 
 def inlet_velocity(y):
     U = 50.0
-    L = 20.0
+    L = 10.0
     inlet_profile = 4*U*y*(L-y)/L**2
     return inlet_profile
 

@@ -3,4 +3,4 @@ dt: 1e-3
 tmax: 20.0
 verbose: true
 output_frequency: 50
-reynolds_number: 100.0
+reynolds_number: 150

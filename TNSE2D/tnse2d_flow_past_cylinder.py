@@ -35,11 +35,11 @@ theta = 0.5 # Crank-Nicolson scheme
 def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
-def inlet_velocity(y):
-    U = 50.0
-    L = 20.0
-    inlet_profile = 4*U*y*(L-y)/L**2
-    return inlet_profile
+def inlet_velocity(y, t):
+    U = 10.0
+    L = 10.0
+    inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
+    return (inlet_profile, 0.0)
 
 x, y = SpatialCoordinate(mesh)
 
@@ -72,17 +72,17 @@ boundary_markers = {"Bottom Wall": 1,
 no_slip_bc = Constant((0.0, 0.0))
 bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"]))]
 
-bcs.append(DirichletBC(Z.sub(0),(inlet_velocity(y),0.0), (boundary_markers["Inlet"],)))
+bcs.append(DirichletBC(Z.sub(0), inlet_velocity(y, c), (boundary_markers["Inlet"],)))
 # bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 
 Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + (50.0)/Re*inner(grad(u), grad(v))*dx
-    + inner(dot(grad(u), u), v)*dx 
-    - p * div(v)*dx +
-    div(u)*phi*dx
+    + (10.0*2.0)/Re*inner(grad(uh), grad(v))*dx
+    + inner(dot(grad(uh), uh), v)*dx 
+    - ph * div(v)*dx +
+    div(uh)*phi*dx
 )
 
 solver_parameters = {

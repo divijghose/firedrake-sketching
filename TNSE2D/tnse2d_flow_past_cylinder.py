@@ -31,7 +31,7 @@ t = 0.0
 c = Constant(t)
 tdump = config.get("output_frequency", 100) * float(dt)
 dumpt = 0.
-
+theta = 0.5 # Crank-Nicolson scheme
 def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
@@ -54,6 +54,13 @@ u, p = split(up)
 up_n = Function(Z)
 u_n, p_n = split(up_n)
 
+uph = Function(Z)
+
+uh, ph = split(uph)
+
+uh = (theta*u + (1.0-theta)*u_n)
+ph = (theta*p + (1.0-theta)*p_n)
+
 v, phi = TestFunctions(Z)
 
 boundary_markers = {"Bottom Wall": 1,
@@ -72,10 +79,10 @@ Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + (1.0*0.2)/Re*inner(grad(u), grad(v))*dx
-    + inner(dot(grad(u), u), v)*dx 
-    - p * div(v)*dx +
-    div(u)*phi*dx
+    + (1.0*0.2)/Re*inner(grad(uh), grad(v))*dx
+    + inner(dot(grad(uh), uh), v)*dx 
+    - ph * div(v)*dx +
+    div(uh)*phi*dx
 )
 
 solver_parameters = {

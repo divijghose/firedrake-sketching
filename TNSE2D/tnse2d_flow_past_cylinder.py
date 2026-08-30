@@ -26,7 +26,7 @@ outfile = VTKFile(f"{output_dir}/tnse2d_fpc.pvd")
 
 
 dt = float(config.get("dt", 1e-3))
-T = float(config.get("tmax", 20.0))
+T = float(config.get("tmax", 500.0)) *dt
 t = 0.0
 c = Constant(t)
 tdump = config.get("output_frequency", 100) * float(dt)
@@ -36,10 +36,19 @@ def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
 def inlet_velocity(y, t):
-    U = 10.0
-    L = 10.0
-    inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
-    return (inlet_profile, 0.0)
+    U = 0.04
+    L = 49.0
+    # Small asymmetric perturbation to trigger shedding
+    # perturbation = 0.01 * U * sin(2 * pi * t / 1.0)
+    # inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
+    # return (inlet_profile + perturbation, 0.0)
+    inlet_profile = 4 * U * y * (L - y) / L**2
+    # small vertical perturbation to trigger shedding till t = 0.5
+    if t.dat.data[0] < 0.5:
+        vertical_perturbation = 0.01 * U 
+        return (inlet_profile, vertical_perturbation)
+    else:
+        return (inlet_profile, 0.0)
 
 x, y = SpatialCoordinate(mesh)
 
@@ -74,13 +83,17 @@ bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], bound
 
 bcs.append(DirichletBC(Z.sub(0), inlet_velocity(y, c), (boundary_markers["Inlet"],)))
 # bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
+# Pin pressure at a single node to remove the null space
+nullspace = MixedVectorSpaceBasis(
+    Z, [Z.sub(0), VectorSpaceBasis(constant=True)]
+)
 
 Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + (10.0*2.0)/Re*inner(grad(uh), grad(v))*dx
-    + inner(dot(grad(uh), uh), v)*dx 
+    + 1.0/Re*inner(grad(uh), grad(v))*dx
+    +inner(dot(uh, nabla_grad(uh)), v)*dx + 0.5*inner(div(uh)*uh, v)*dx
     - ph * div(v)*dx +
     div(uh)*phi*dx
 )
@@ -101,7 +114,7 @@ if config.get("verbose", False):
     solver_parameters["snes_monitor"] = None
 
 problem = NonlinearVariationalProblem(F, up, bcs=bcs)
-solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters)
+solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters, nullspace=nullspace)
 
 up_n.assign(up)
 
@@ -114,14 +127,14 @@ while t < T:
     solver.solve()
 
     up_n.assign(up)
-
-    if dumpt > tdump - dt/2:
-        u, p = up.subfunctions
-        u.rename("velocity")
-        p.rename("pressure")
-        outfile.write(u, p, time=t)
-        
-        dumpt -= tdump
-    dumpt += dt
+    if t > 5000*dt:
+        if dumpt > tdump - dt/2:
+            u, p = up.subfunctions
+            u.rename("velocity")
+            p.rename("pressure")
+            outfile.write(u, p, time=t)
+            
+            dumpt -= tdump
+        dumpt += dt
     
 

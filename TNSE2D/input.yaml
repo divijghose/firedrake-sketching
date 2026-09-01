@@ -1,6 +1,6 @@
 output_dir: "tnse2d_output"
 dt: 1e-3
-tmax: 15000
-verbose: true
+tmax: 25000
+verbose: false
 output_frequency: 100
 reynolds_number: 80

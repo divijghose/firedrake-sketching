@@ -36,19 +36,10 @@ def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
 def inlet_velocity(y, t):
-    U = 0.04
+    U = 4.0 
     L = 49.0
-    # Small asymmetric perturbation to trigger shedding
-    # perturbation = 0.01 * U * sin(2 * pi * t / 1.0)
-    # inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
-    # return (inlet_profile + perturbation, 0.0)
-    inlet_profile = 4 * U * y * (L - y) / L**2
-    # small vertical perturbation to trigger shedding till t = 0.5
-    if t.dat.data[0] < 0.5:
-        vertical_perturbation = 0.01 * U 
-        return (inlet_profile, vertical_perturbation)
-    else:
-        return (inlet_profile, 0.0)
+    inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
+    return (inlet_profile, 0.0)
 
 x, y = SpatialCoordinate(mesh)
 
@@ -127,7 +118,7 @@ while t < T:
     solver.solve()
 
     up_n.assign(up)
-    if t > 5000*dt:
+    if t > 50*dt:
         if dumpt > tdump - dt/2:
             u, p = up.subfunctions
             u.rename("velocity")

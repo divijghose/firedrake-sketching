@@ -32,14 +32,14 @@ c = Constant(t)
 tdump = config.get("output_frequency", 100) * float(dt)
 dumpt = 0.
 theta = 0.5 # Crank-Nicolson scheme
-def du_dt(u, u_n, dt):
-    return (u - u_n) / dt
+def du_dt(u_np1, u_, dt):
+    return (u_np1 - u_) / dt
 
-def inlet_velocity(y, t):
+def inlet_velocity(y):
     U = 1.5
     L = 0.41
     inlet_profile = 4 * U * y * (L - y) / L**2 
-    return (inlet_profile, 0.0)
+    return as_vector([inlet_profile, 0.0])
 
 x, y = SpatialCoordinate(mesh)
 
@@ -70,11 +70,10 @@ boundary_markers = {"Bottom Wall": 1,
                     "Cylinder": 5}
 
 no_slip_bc = Constant((0.0, 0.0))
-bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"]))]
+bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"],))]
 
-bcs.append(DirichletBC(Z.sub(0), inlet_velocity(y, c), (boundary_markers["Inlet"],)))
-# bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
-# Pin pressure at a single node to remove the null space
+bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y), V), (boundary_markers["Inlet"],)))
+bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 nullspace = MixedVectorSpaceBasis(
     Z, [Z.sub(0), VectorSpaceBasis(constant=True)]
 )
@@ -83,29 +82,58 @@ Re = Constant(float(config.get("reynolds_number", 100.0)))
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
-    + 1.0/Re*inner(grad(uh), grad(v))*dx
-    +inner(dot(uh, nabla_grad(uh)), v)*dx + 0.5*inner(div(uh)*uh, v)*dx
+    + Constant(1.0/Re)*inner(grad(uh), grad(v))*dx
+    +inner(dot(grad(uh), uh), v)*dx 
     - ph * div(v)*dx +
     div(uh)*phi*dx
 )
-
-solver_parameters = {
-    "snes_type": "newtonls",
-    "snes_rtol": 1e-6,
-    "ksp_type": "gmres",
-    "pc_type": "fieldsplit",
-    "pc_fieldsplit_type": "schur",
-    "pc_fieldsplit_schur_fact_type": "full",
-    "fieldsplit_0_ksp_type": "preonly",
-    "fieldsplit_0_pc_type": "hypre",
-    "fieldsplit_1_ksp_type": "preonly",
-    "fieldsplit_1_pc_type": "hypre"
-}
+appctx = {"Re": Re, "velocity_space": 0}
+if config.get("solver_type", "default") == "pcdpc":
+    solver_parameters = {
+        "mat_type": "matfree",
+        "ksp_type": "fgmres",
+        "ksp_gmres_modifiedgramschmidt": None,
+        "ksp_monitor_true_residual": None,
+        "pc_type": "fieldsplit",
+        "pc_fieldsplit_type": "schur",
+        "pc_fieldsplit_schur_fact_type": "lower",
+        "fieldsplit_0_ksp_type": "preonly",
+        "fieldsplit_0_pc_type": "python",
+        "fieldsplit_0_pc_python_type": "firedrake.AssembledPC",
+        "fieldsplit_0_assembled_pc_type": "lu",
+        "fieldsplit_1_ksp_type": "gmres",
+        "fieldsplit_1_ksp_rtol": 1e-4,
+        "fieldsplit_1_pc_type": "python",
+        "fieldsplit_1_pc_python_type": "firedrake.PCDPC",
+        "fieldsplit_1_pcd_Mp_ksp_type": "preonly",
+        "fieldsplit_1_pcd_Mp_pc_type": "lu",
+        "fieldsplit_1_pcd_Kp_ksp_type": "preonly",
+        "fieldsplit_1_pcd_Kp_pc_type": "lu",
+        "fieldsplit_1_pcd_Fp_mat_type": "matfree",
+        }
+else:
+    solver_parameters = {
+        "snes_type": "newtonls",
+        "snes_rtol": 1e-6,
+        "ksp_type": "gmres",
+        "pc_type": "fieldsplit",
+        "pc_fieldsplit_type": "schur",
+        "pc_fieldsplit_schur_fact_type": "full",
+        "fieldsplit_0_ksp_type": "preonly",
+        "fieldsplit_0_pc_type": "hypre",
+        "fieldsplit_1_ksp_type": "preonly",
+        "fieldsplit_1_pc_type": "hypre"
+    }
+    # solver_parameters={"snes_monitor": None,
+    #                 "ksp_type": "gmres",
+    #                 "mat_type": "aij",
+    #                 "pc_type": "lu",
+    #                 "pc_factor_mat_solver_type": "mumps"}
 if config.get("verbose", False):
     solver_parameters["snes_monitor"] = None
 
 problem = NonlinearVariationalProblem(F, up, bcs=bcs)
-solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters, nullspace=nullspace)
+solver = NonlinearVariationalSolver(problem, solver_parameters=solver_parameters, nullspace=nullspace, appctx=appctx)
 
 up_n.assign(up)
 
@@ -118,7 +146,7 @@ while t < T:
     solver.solve()
 
     up_n.assign(up)
-    if t > 50*dt:
+    if t > 1.0*dt:
         if dumpt > tdump - dt/2:
             u, p = up.subfunctions
             u.rename("velocity")

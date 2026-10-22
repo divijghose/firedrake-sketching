@@ -36,9 +36,9 @@ def du_dt(u, u_n, dt):
     return (u - u_n) / dt
 
 def inlet_velocity(y, t):
-    U = 4.0 
-    L = 49.0
-    inlet_profile = 4 * U * y * (L - y) / L**2 * (1.0 + 0.005 * sin(pi * t / 40.0))
+    U = 1.5
+    L = 0.41
+    inlet_profile = 4 * U * y * (L - y) / L**2 
     return (inlet_profile, 0.0)
 
 x, y = SpatialCoordinate(mesh)

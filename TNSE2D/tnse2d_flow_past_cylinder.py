@@ -3,7 +3,7 @@ from firedrake.petsc import PETSc
 import os
 import sys
 
-mesh = Mesh("assets/meshes/flow_past_cylinder.msh")
+mesh = Mesh("assets/meshes/2Dmesh.msh")
 # Read configuration from YAML file
 if len(sys.argv) > 1 and sys.argv[1].endswith(".yaml"):
     PETSc.Sys.Print(f"Reading configuration from YAML file: {sys.argv[1]}")
@@ -63,17 +63,23 @@ ph = (theta*p + (1.0-theta)*p_n)
 
 v, phi = TestFunctions(Z)
 
-boundary_markers = {"Bottom Wall": 1,
-                    "Outlet": 2,
-                    "Top Wall": 3,
-                    "Inlet": 4,
-                    "Cylinder": 5}
+# boundary_markers = {"Bottom Wall": 1,
+#                     "Outlet": 2,
+#                     "Top Wall": 3,
+#                     "Inlet": 4,
+#                     "Cylinder": 5}
 
-no_slip_bc = Constant((0.0, 0.0))
-bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"],))]
+# no_slip_bc = Constant((0.0, 0.0))
+# bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"], boundary_markers["Top Wall"], boundary_markers["Cylinder"],))]
 
-bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y), V), (boundary_markers["Inlet"],)))
-bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
+# bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y), V), (boundary_markers["Inlet"],)))
+# bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
+
+noslipBC = DirichletBC(Z.sub(0), Constant((0.0, 0.0)), (3,))
+inflowBC = DirichletBC(Z.sub(0), interpolate(inlet_velocity(y),V), (1,))
+cylinderBC = DirichletBC(Z.sub(0), Constant((0.0, 0.0)), (5,))
+
+bcs = [noslipBC, inflowBC, cylinderBC]
 nullspace = MixedVectorSpaceBasis(
     Z, [Z.sub(0), VectorSpaceBasis(constant=True)]
 )

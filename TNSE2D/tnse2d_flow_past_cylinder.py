@@ -36,7 +36,7 @@ def du_dt(u_np1, u_, dt):
     return (u_np1 - u_) / dt
 
 def inlet_velocity(y):
-    U = 1.5
+    U = 2.5
     L = 0.41
     inlet_profile = 4 * U * y * (L - y) / L**2 
     return as_vector([inlet_profile, 0.0])
@@ -75,11 +75,12 @@ v, phi = TestFunctions(Z)
 # bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y), V), (boundary_markers["Inlet"],)))
 # bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 
-noslipBC = DirichletBC(Z.sub(0), Constant((0.0, 0.0)), (3,))
-inflowBC = DirichletBC(Z.sub(0), interpolate(inlet_velocity(y),V), (1,))
+noslipBC = DirichletBC(Z.sub(0), Constant((1.0, 0.0)), (3,))
+inflowBC = DirichletBC(Z.sub(0), Constant((1.0, 0.0)), (1,))
 cylinderBC = DirichletBC(Z.sub(0), Constant((0.0, 0.0)), (5,))
+pressureBC = DirichletBC(Z.sub(1), Constant(0.0), (2,))
 
-bcs = [noslipBC, inflowBC, cylinderBC]
+bcs = [inflowBC, cylinderBC, pressureBC, noslipBC]
 nullspace = MixedVectorSpaceBasis(
     Z, [Z.sub(0), VectorSpaceBasis(constant=True)]
 )
@@ -152,7 +153,7 @@ while t < T:
     solver.solve()
 
     up_n.assign(up)
-    if t > 1.0*dt:
+    if t > 1000*dt:
         if dumpt > tdump - dt/2:
             u, p = up.subfunctions
             u.rename("velocity")

@@ -1,7 +1,7 @@
 output_dir: "tnse2d_output"
 dt: 1e-2
-tmax: 50000
+tmax: 5300
 verbose: true
 output_frequency: 10
-reynolds_number: 500
+reynolds_number: 100
 solver_type: default

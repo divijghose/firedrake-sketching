@@ -39,10 +39,10 @@ def du_dt(u_np1, u_, dt):
     return (u_np1 - u_) / dt
 
 
-def inlet_velocity(y):
-    U = 1.5
+def inlet_velocity(y, t):
+    U = 1.5 * sin(pi*t/8)
     L = 0.41
-    inlet_profile = 4 * U * y * (L - y) / L**2 
+    inlet_profile = 4 * U * (y+0.2) * ((L-0.2) - y) / L**2 
     return as_vector([inlet_profile, 0.0])
 
 
@@ -53,11 +53,14 @@ V = VectorFunctionSpace(mesh, "CG", 3)
 W = FunctionSpace(mesh, "CG", 2)
 Z = V * W
 
-up = Function(Z)
-u, p = split(up)
+up_np1 = Function(Z) # u_s
+u_np1, p_np1 = split(up_np1)
 
-up_n = Function(Z)
+up_n = Function(Z) # u_n
 u_n, p_n = split(up_n)
+
+up_nm1 = Function(Z) # u_n1
+u_nm1, p_nm1 = split(up_nm1)
 
 uph = Function(Z)
 
@@ -79,15 +82,27 @@ bcs = [DirichletBC(Z.sub(0), no_slip_bc, (boundary_markers["Bottom Wall"],
                                           boundary_markers["Top Wall"],
                                           boundary_markers["Cylinder"],))]
 
-bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y), V),
+bcs.append(DirichletBC(Z.sub(0), interpolate(inlet_velocity(y, c), V),
                        (boundary_markers["Inlet"],)))
-bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
+# bcs.append(DirichletBC(Z.sub(1), Constant(0.0), (boundary_markers["Outlet"],)))
 
 nullspace = MixedVectorSpaceBasis(
     Z, [Z.sub(0), VectorSpaceBasis(constant=True)]
 )
 
 Re = Constant(float(config.get("reynolds_number", 100.0)))
+
+F1 = Constant(1.0/1000.0) * inner(du_dt(u, u_n), v) * dx \
+                                + 
+
+
+
+
+
+
+
+
+
 
 F = (
     inner(du_dt(u, u_n, dt),v)*dx
@@ -155,7 +170,7 @@ while t < T:
     solver.solve()
 
     up_n.assign(up)
-    if t > 500*dt:
+    if t > dt:
         if dumpt > tdump - dt/2:
             u, p = up.subfunctions
             u.rename("velocity")

@@ -15,11 +15,14 @@ W = FunctionSpace(mesh, "CG", 1)
 
 Z = V * W
 
-up = Function(Z)
+up = TrialFunctions(Z)
 u, p = split(up)
 
 up_n = Function(Z)
 u_n, p_n = split(up_n)
+
+up_np1 = Function(Z)
+u_np1, p_np1 = split(up_np1)
 
 v, phi = TestFunctions(Z)
 
@@ -40,17 +43,16 @@ nullspace = MixedVectorSpaceBasis(
 t = 0.0
 outfile = VTKFile("lid_driven_cavity.pvd")
 while t < T:
-    up.assign(up_n)
-    solve(F == 0, up, bcs=bcs, nullspace=nullspace,
+    up_n.assign(up_np1)
+    solve(F == 0, up_np1, bcs=bcs, nullspace=nullspace,
                     solver_parameters={"snes_monitor": None,
                              "ksp_type": "gmres",
                              "mat_type": "aij",
                              "pc_type": "lu",
                              "pc_factor_mat_solver_type": "mumps"})
-    up_n.assign(up)
     t += dt
-    u, p = up.subfunctions
-    u.rename("velocity")
-    p.rename("pressure")
-    outfile.write(u, p, time=t)
+    u_np1, p_np1 = up_np1.subfunctions
+    u_np1.rename("velocity")
+    p_np1.rename("pressure")
+    outfile.write(u_np1, p_np1, time=t)
 
